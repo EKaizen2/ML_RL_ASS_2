@@ -2,6 +2,7 @@ import numpy as np
 from FourRooms import FourRooms
 import matplotlib.pyplot as plt
 import random
+import os
 
 class QLearningAgent:
     def __init__(self, learning_rate=0.1, discount_factor=0.9, exploration_strategy='epsilon_greedy'):
@@ -58,9 +59,13 @@ class QLearningAgent:
         else:
             self.temperature = max(self.temperature_min, self.temperature * self.temperature_decay)
 
-def train_agent(exploration_strategy, num_episodes=1000):
+def train_agent(exploration_strategy, num_episodes=1000, learning_rate=0.1, discount_factor=0.9):
     env = FourRooms('simple')
-    agent = QLearningAgent(exploration_strategy=exploration_strategy)
+    agent = QLearningAgent(
+        learning_rate=learning_rate,
+        discount_factor=discount_factor,
+        exploration_strategy=exploration_strategy
+    )
     episode_rewards = []
     
     for episode in range(num_episodes):
@@ -94,35 +99,88 @@ def train_agent(exploration_strategy, num_episodes=1000):
     
     return env, episode_rewards
 
+def save_path_visualization(env, filename, show=True):
+    # Create a new figure
+    fig = plt.figure(figsize=(8, 8))
+    
+    # Get the environment state
+    pixels = env._FourRooms__environment.copy()
+    
+    # Add path
+    for loc in env._FourRooms__pathRecords[-1]:
+        pixels[loc[1]][loc[0]] = 4
+    
+    # Add start position
+    pixels[env._FourRooms__start_pos[1]][env._FourRooms__start_pos[0]] = 5
+    
+    # Add package locations
+    for i, loc in enumerate(env._FourRooms__package_locations):
+        pixels[loc[1]][loc[0]] = i + 1
+    
+    # Plot
+    plt.imshow(pixels, cmap=FourRooms.custom_cmap, interpolation='nearest')
+    
+    # Save the figure
+    plt.savefig(filename, bbox_inches='tight', dpi=300)
+    
+    # Show the figure if requested
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
 def main():
-    # Train with epsilon-greedy
-    env_epsilon, rewards_epsilon = train_agent('epsilon_greedy')
+    # Get the current directory
+    current_dir = os.getcwd()
     
-    # Save epsilon-greedy path
-    plt.figure()
-    env_epsilon.showPath(-1)
-    plt.savefig('.epsilon_paths/epsilon_greedy_path.png', bbox_inches='tight', dpi=300)
-    plt.close()
+    # Create directories with full paths
+    epsilon_dir = os.path.join(current_dir, 'epsilon_paths')
+    softmax_dir = os.path.join(current_dir, 'softmax_paths')
+    learning_curves_dir = os.path.join(current_dir, 'learning_curves')
     
-    # Train with softmax
-    env_softmax, rewards_softmax = train_agent('softmax')
+    # Create directories if they don't exist
+    os.makedirs(epsilon_dir, exist_ok=True)
+    os.makedirs(softmax_dir, exist_ok=True)
+    os.makedirs(learning_curves_dir, exist_ok=True)
     
-    # Save softmax path
-    plt.figure()
-    env_softmax.showPath(-1)
-    plt.savefig('.softmax_paths/softmax_path.png', bbox_inches='tight', dpi=300)
-    plt.close()
+    # Define different hyperparameter combinations to test
+    hyperparams = [
+        {'lr': 0.1, 'gamma': 0.9},
+        {'lr': 0.2, 'gamma': 0.9},
+        {'lr': 0.1, 'gamma': 0.95},
+        {'lr': 0.2, 'gamma': 0.95}
+    ]
     
-    # Plot learning curves
-    plt.figure(figsize=(10, 5))
-    plt.plot(rewards_epsilon, label='ε-greedy', alpha=0.7)
-    plt.plot(rewards_softmax, label='Softmax', alpha=0.7)
-    plt.xlabel('Episode')
-    plt.ylabel('Total Reward')
-    plt.title('Learning Curves for Different Exploration Strategies')
-    plt.legend()
-    plt.savefig('.learning_curves/learning_curves.png', bbox_inches='tight', dpi=300)
-    plt.close()
+    for params in hyperparams:
+        lr = params['lr']
+        gamma = params['gamma']
+        
+        # Create filename suffix with hyperparameters
+        param_suffix = f"_lr{lr}_gamma{gamma}"
+        
+        # Train with epsilon-greedy
+        env_epsilon, rewards_epsilon = train_agent('epsilon_greedy', learning_rate=lr, discount_factor=gamma)
+        
+        # Save and show epsilon-greedy path
+        save_path_visualization(env_epsilon, os.path.join(epsilon_dir, f'epsilon_greedy_path{param_suffix}.png'))
+        
+        # Train with softmax
+        env_softmax, rewards_softmax = train_agent('softmax', learning_rate=lr, discount_factor=gamma)
+        
+        # Save and show softmax path
+        save_path_visualization(env_softmax, os.path.join(softmax_dir, f'softmax_path{param_suffix}.png'))
+        
+        # Plot learning curves
+        fig = plt.figure(figsize=(10, 5))
+        plt.plot(rewards_epsilon, label='ε-greedy', alpha=0.7)
+        plt.plot(rewards_softmax, label='Softmax', alpha=0.7)
+        plt.xlabel('Episode')
+        plt.ylabel('Total Reward')
+        plt.title(f'Learning Curves (lr={lr}, γ={gamma})')
+        plt.legend()
+        plt.savefig(os.path.join(learning_curves_dir, f'learning_curves{param_suffix}.png'), bbox_inches='tight', dpi=300)
+        plt.show()
+        plt.close(fig)
 
 if __name__ == "__main__":
     main()
