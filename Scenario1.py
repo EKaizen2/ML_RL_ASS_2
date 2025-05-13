@@ -99,36 +99,6 @@ def train_agent(exploration_strategy, num_episodes=1000, learning_rate=0.1, disc
     
     return env, episode_rewards
 
-def save_path_visualization(env, filename, show=True):
-    # Create a new figure
-    fig = plt.figure(figsize=(8, 8))
-    
-    # Get the environment state
-    pixels = env._FourRooms__environment.copy()
-    
-    # Add path
-    for loc in env._FourRooms__pathRecords[-1]:
-        pixels[loc[1]][loc[0]] = 4
-    
-    # Add start position
-    pixels[env._FourRooms__start_pos[1]][env._FourRooms__start_pos[0]] = 5
-    
-    # Add package locations
-    for i, loc in enumerate(env._FourRooms__package_locations):
-        pixels[loc[1]][loc[0]] = i + 1
-    
-    # Plot
-    plt.imshow(pixels, cmap=FourRooms.custom_cmap, interpolation='nearest')
-    
-    # Save the figure
-    plt.savefig(filename, bbox_inches='tight', dpi=300)
-    
-    # Show the figure if requested
-    if show:
-        plt.show()
-    else:
-        plt.close(fig)
-
 def main():
     # Get the current directory
     current_dir = os.getcwd()
@@ -161,17 +131,17 @@ def main():
         # Train with epsilon-greedy
         env_epsilon, rewards_epsilon = train_agent('epsilon_greedy', learning_rate=lr, discount_factor=gamma)
         
-        # Save and show epsilon-greedy path
-        save_path_visualization(env_epsilon, os.path.join(epsilon_dir, f'epsilon_greedy_path{param_suffix}.png'))
+        # Save epsilon-greedy path
+        env_epsilon.showPath(-1) #, savefig=os.path.join(epsilon_dir, f'epsilon_greedy_path{param_suffix}.png'))
         
         # Train with softmax
         env_softmax, rewards_softmax = train_agent('softmax', learning_rate=lr, discount_factor=gamma)
         
-        # Save and show softmax path
-        save_path_visualization(env_softmax, os.path.join(softmax_dir, f'softmax_path{param_suffix}.png'))
+        # Save softmax path
+        env_softmax.showPath(-1) #, savefig=os.path.join(softmax_dir, f'softmax_path{param_suffix}.png'))
         
         # Plot learning curves
-        fig = plt.figure(figsize=(10, 5))
+        plt.figure(figsize=(10, 5))
         plt.plot(rewards_epsilon, label='ε-greedy', alpha=0.7)
         plt.plot(rewards_softmax, label='Softmax', alpha=0.7)
         plt.xlabel('Episode')
@@ -179,8 +149,7 @@ def main():
         plt.title(f'Learning Curves (lr={lr}, γ={gamma})')
         plt.legend()
         plt.savefig(os.path.join(learning_curves_dir, f'learning_curves{param_suffix}.png'), bbox_inches='tight', dpi=300)
-        plt.show()
-        plt.close(fig)
+        plt.close()
 
 if __name__ == "__main__":
     main()
