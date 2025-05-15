@@ -115,9 +115,6 @@ def main():
     
     # Define different hyperparameter combinations to test
     hyperparams = [
-        {'lr': 0.1, 'gamma': 0.9},
-        {'lr': 0.2, 'gamma': 0.9},
-        {'lr': 0.1, 'gamma': 0.95},
         {'lr': 0.2, 'gamma': 0.95}
     ]
     
