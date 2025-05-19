@@ -1,6 +1,10 @@
 # Four Rooms Reinforcement Learning Assignment
 
+Github Repository: https://github.com/EKaizen2/ML_RL_ASS_2.git 
+
 ## Program Structure
+
+Makefile:  Includes commands for running all scenarios
 
 ### Core Files
 - `FourRooms.py`: The main environment file that implements the Four Rooms grid world. It handles:
